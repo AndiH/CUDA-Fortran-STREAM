@@ -1,0 +1,10 @@
+# This file steers synchronization of the current folder with different target machines
+# See https://github.com/AndiH/simpler-rsync for more information
+[juhydra]
+	hostname = "juhydra"
+	target_folder = "/home/aherten/NVAL/Other/STREAM-Fortran"
+	default = true
+
+[jureca]
+	hostname = "jureca"
+	target_folder = "/homeb/zam/aherten/NVAL/OtherProgramming/STREAM-Fortran"
