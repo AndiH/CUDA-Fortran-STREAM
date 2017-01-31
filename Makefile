@@ -17,3 +17,7 @@ stream.bin: Makefile $(SOURCE)
 clean:
 	rm *.bin
 	rm *.mod
+
+.PHONY: run
+run: stream.bin
+	./stream.bin
