@@ -14,4 +14,4 @@ The four STREAM benchmarks are run on the GPU, that is (with arrays `a`, `b`, `c
 For information is available in `stream.F90`. The `Makefile` should suffice to call `make run` for compiling and running the four micro-benchmarks.
 
 
-See also [www.streambench.org](http://www.streambench.org), especially for notes on publishing results based no (variants of) the STREAM benchmark.
+See also [www.streambench.org](http://www.streambench.org), especially for notes on publishing results based on (variants of) the STREAM benchmark.
