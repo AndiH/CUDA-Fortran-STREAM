@@ -48,7 +48,7 @@ program stream
 	real :: time, tempTime
 	integer :: gpuStatus
 	integer(kind=8) :: bytes
-	integer :: i
+	integer, parameter :: ntimes
 
 	allocate(a(N))
 	allocate(d_a(N))
@@ -67,17 +67,17 @@ program stream
 	value = 2.2
 	call init<<<nBlocks,nThreads>>>(d_b, value, N)
 
-	do i = 1, 10
+	do ntimes = 1, 10
 		gpuStatus = cudaEventRecord(startEvent, 0)
 		call copy<<<nBlocks,nThreads>>>(d_a, d_b, N)
 		gpuStatus = cudaEventRecord(stopEvent, 0)
 		gpuStatus = cudaEventSynchronize(stopEvent)
 		gpuStatus = cudaEventElapsedTime(tempTime, startEvent, stopEvent) ! in ms
 	! write(*,*) time/1000.
-		if ((i == 1) .OR. (tempTime < time)) then
+		if ((ntimes == 1) .OR. (tempTime < time)) then
 			time = tempTime
 		end if
-		! write (*,*) "Loop", i, "tempTime", tempTime, "time", time
+		! write (*,*) "Loop", ntimes, "tempTime", tempTime, "time", time
 	end do
 	bytes = 2 * sizeof(value) * N
 	! write(*,*) "Bytes: ", bytes
