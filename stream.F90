@@ -205,7 +205,7 @@ program stream
 	end do
 
 
-	write(*, "(A15, I3, A32)") "Ran benchmarks ", ntimes, " times. Showing minimum results."
+	write(*, "(A, I0, A)") "Ran benchmarks ", ntimes, " times. Showing minimum results."
 	write(*,*) "-----------------------------------------------"
 	write(*, "(A10, 4x, A11, 4x, A9)") "Experiment", "Rate / GB/s", "Time / ms"
 	outputformat = "(A10, 4x, F11.3, 4x, F9.2)"
