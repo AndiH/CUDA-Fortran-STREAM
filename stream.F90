@@ -9,16 +9,27 @@
 ! See also http://www.streambench.org, especially the associated license
 ! ------------------------------------------------------------------------------
 ! Notes
-! 	- The dp_kind is selectable, as it is in the project I'm using the code for
+!   - The dp_kind is selectable, as it is in the project I'm using the code for
 !   - CUDA events are used for timings, since they seem easy to handle
 !   - Timings: Max and Avg values are not printed, yet
-!   - CUDA Errors: Those are not handled yet!
 !   - Verification of Results: Also not done yet!
 !   - Makefile is given with PGFortran, which should be the only compiler
 !     capable to generate CUDA code from Fortran
 !   - I actually know very little Fortran. Feel free to correct something on
 !     Github!
 ! ------------------------------------------------------------------------------
+
+! The following is a ugly hack, but the line is very close to being too long
+#define CUDA_SUCCESS 0
+#define CUDACALL__(e,fmt,c) \
+e=c; \
+if(e/=CUDA_SUCCESS) \
+write(*,fmt) "CUDA Error ",e," in ",__FILE__,":",__LINE__,": ",trim(cudaGetErrorString(e))," (",#c,")"
+#define CUDACALL(c) CUDACALL__(gpuStatus,fmt,c)
+
+module debug
+	character(len=27) :: fmt = "(A,I0,A,A,A,I0,A,A,A,A,A,A)"
+end module debug
 
 module datatypes
 	integer, parameter :: DP=13, dp_kind=selected_real_kind(DP)
@@ -112,6 +123,7 @@ program stream
 	use datatypes
 	use cudafor
 	use gpu
+	use debug
 	implicit none
 
 	integer(kind=8), parameter :: N = 250000000  ! Lengths of data arrays
@@ -137,8 +149,8 @@ program stream
 	allocate(d_b(N))
 	allocate(d_c(N))
 
-	gpuStatus = cudaEventCreate(startEvent)
-	gpuStatus = cudaEventCreate(stopEvent)
+	CUDACALL( cudaEventCreate(startEvent) )
+	CUDACALL( cudaEventCreate(stopEvent) )
 
 	nThreads = dim3(192, 1, 1)
 	nBlocks = dim3(N/nThreads%x, 1, 1)
@@ -155,38 +167,38 @@ program stream
 	scalar = 0.25 * value
 
 	do i = 1, ntimes
-		gpuStatus = cudaEventRecord(startEvent, 0)
+		CUDACALL( cudaEventRecord(startEvent, 0) )
 		call copy<<<nBlocks, nThreads>>>(d_a, d_b, N)
-		gpuStatus = cudaEventRecord(stopEvent, 0)
-		gpuStatus = cudaEventSynchronize(stopEvent)
-		gpuStatus = cudaEventElapsedTime(tempTime, startEvent, stopEvent) ! in ms
+		CUDACALL( cudaEventRecord(stopEvent, 0) )
+		CUDACALL( cudaEventSynchronize(stopEvent) )
+		CUDACALL( cudaEventElapsedTime(tempTime, startEvent, stopEvent) ) ! in ms
 		if ((i == 1) .OR. (tempTime < time(1))) then
 			time(1) = tempTime
 		end if
 
-		gpuStatus = cudaEventRecord(startEvent, 0)
+		CUDACALL( cudaEventRecord(startEvent, 0) )
 		call scale<<<nBlocks, nThreads>>>(d_a, d_b, scalar, N)
-		gpuStatus = cudaEventRecord(stopEvent, 0)
-		gpuStatus = cudaEventSynchronize(stopEvent)
-		gpuStatus = cudaEventElapsedTime(tempTime, startEvent, stopEvent) ! in ms
+		CUDACALL( cudaEventRecord(stopEvent, 0) )
+		CUDACALL( cudaEventSynchronize(stopEvent) )
+		CUDACALL( cudaEventElapsedTime(tempTime, startEvent, stopEvent) ) ! in ms
 		if ((i == 1) .OR. (tempTime < time(2))) then
 			time(2) = tempTime
 		end if
 
-		gpuStatus = cudaEventRecord(startEvent, 0)
+		CUDACALL( cudaEventRecord(startEvent, 0) )
 		call add<<<nBlocks, nThreads>>>(d_a, d_b, d_c, N)
-		gpuStatus = cudaEventRecord(stopEvent, 0)
-		gpuStatus = cudaEventSynchronize(stopEvent)
-		gpuStatus = cudaEventElapsedTime(tempTime, startEvent, stopEvent) ! in ms
+		CUDACALL( cudaEventRecord(stopEvent, 0) )
+		CUDACALL( cudaEventSynchronize(stopEvent) )
+		CUDACALL( cudaEventElapsedTime(tempTime, startEvent, stopEvent) ) ! in ms
 		if ((i == 1) .OR. (tempTime < time(3))) then
 			time(3) = tempTime
 		end if
 
-		gpuStatus = cudaEventRecord(startEvent, 0)
+		CUDACALL( cudaEventRecord(startEvent, 0) )
 		call triad<<<nBlocks, nThreads>>>(d_a, d_b, d_c, scalar, N)
-		gpuStatus = cudaEventRecord(stopEvent, 0)
-		gpuStatus = cudaEventSynchronize(stopEvent)
-		gpuStatus = cudaEventElapsedTime(tempTime, startEvent, stopEvent) ! in ms
+		CUDACALL( cudaEventRecord(stopEvent, 0) )
+		CUDACALL( cudaEventSynchronize(stopEvent) )
+		CUDACALL( cudaEventElapsedTime(tempTime, startEvent, stopEvent) )! in ms
 		if ((i == 1) .OR. (tempTime < time(4))) then
 			time(4) = tempTime
 		end if
