@@ -19,7 +19,7 @@
 !     Github!
 ! ------------------------------------------------------------------------------
 
-! The following is a ugly hack, but the line is very close to being too long
+! The following CUDA_SUCCESS definition is a ugly hack, but the line is very close to being too long
 #define CUDA_SUCCESS 0
 #define CUDACALL__(e,fmt,c) \
 e=c; \
@@ -29,6 +29,7 @@ write(*,fmt) "CUDA Error ",e," in ",__FILE__,":",__LINE__,": ",trim(cudaGetError
 
 module debug
 	character(len=27) :: fmt = "(A,I0,A,A,A,I0,A,A,A,A,A,A)"
+	integer :: gpuStatus
 end module debug
 
 module datatypes
@@ -134,7 +135,6 @@ program stream
 	type(cudaEvent) :: startEvent, stopEvent  ! Using CUDA events for timing
 	real, dimension(4) :: time  ! Array of minimal times for each experiment
 	real :: tempTime  ! Helper value for timings
-	integer :: gpuStatus  ! Holds CUDA error values
 	integer(kind=8), dimension(4) :: bytes
 	integer, parameter :: ntimes = 10  ! Repeat measurements this often
 	integer :: i  ! Loop run variables
@@ -169,6 +169,7 @@ program stream
 	do i = 1, ntimes
 		CUDACALL( cudaEventRecord(startEvent, 0) )
 		call copy<<<nBlocks, nThreads>>>(d_a, d_b, N)
+		CUDACALL( cudaGetLastError() )
 		CUDACALL( cudaEventRecord(stopEvent, 0) )
 		CUDACALL( cudaEventSynchronize(stopEvent) )
 		CUDACALL( cudaEventElapsedTime(tempTime, startEvent, stopEvent) ) ! in ms
@@ -178,6 +179,7 @@ program stream
 
 		CUDACALL( cudaEventRecord(startEvent, 0) )
 		call scale<<<nBlocks, nThreads>>>(d_a, d_b, scalar, N)
+		CUDACALL( cudaGetLastError() )
 		CUDACALL( cudaEventRecord(stopEvent, 0) )
 		CUDACALL( cudaEventSynchronize(stopEvent) )
 		CUDACALL( cudaEventElapsedTime(tempTime, startEvent, stopEvent) ) ! in ms
@@ -187,6 +189,7 @@ program stream
 
 		CUDACALL( cudaEventRecord(startEvent, 0) )
 		call add<<<nBlocks, nThreads>>>(d_a, d_b, d_c, N)
+		CUDACALL( cudaGetLastError() )
 		CUDACALL( cudaEventRecord(stopEvent, 0) )
 		CUDACALL( cudaEventSynchronize(stopEvent) )
 		CUDACALL( cudaEventElapsedTime(tempTime, startEvent, stopEvent) ) ! in ms
@@ -196,6 +199,7 @@ program stream
 
 		CUDACALL( cudaEventRecord(startEvent, 0) )
 		call triad<<<nBlocks, nThreads>>>(d_a, d_b, d_c, scalar, N)
+		CUDACALL( cudaGetLastError() )
 		CUDACALL( cudaEventRecord(stopEvent, 0) )
 		CUDACALL( cudaEventSynchronize(stopEvent) )
 		CUDACALL( cudaEventElapsedTime(tempTime, startEvent, stopEvent) )! in ms
