@@ -140,6 +140,28 @@ program stream
 	integer :: i  ! Loop run variables
 	character(len=30) :: outputformat  ! FORMAT string for Fortran output
 
+	character(len=32) :: arg
+	integer :: iArg
+	logical :: csv = .false., header = .false.
+
+	do i = 1, command_argument_count()
+		call get_command_argument(i, arg)
+
+		select case (arg)
+			case ('-h', '--help')
+				call printHelp()
+				stop
+			case ('--csv')
+				csv = .true.
+			case ('--header')
+				header = .true.
+			case default
+				write(*,'(A,A,/)') 'Unrecognized option: ', arg
+				call printHelp()
+				stop
+		end select
+	end do
+
 	bytes = (/	2 * sizeof(value) * N, &
 				2 * sizeof(value) * N, &
 				3 * sizeof(value) * N, &
@@ -208,14 +230,40 @@ program stream
 		end if
 	end do
 
+	if (.NOT. csv) then
+		write(*, "(A, I0, A)") "Ran benchmarks ", ntimes, " times. Showing minimum results."
+		write(*,*) "-----------------------------------------------"
+		write(*, "(A10, 4x, A11, 4x, A9)") "Experiment", "Rate / GB/s", "Time / ms"
+		outputformat = "(A10, 4x, F11.3, 4x, F9.2)"
+		write(*, outputformat)  "Copy", convertRate(bytes(1),time(1)), time(1)
+		write(*, outputformat) "Scale", convertRate(bytes(2),time(2)), time(2)
+		write(*, outputformat)   "Add", convertRate(bytes(3),time(3)), time(3)
+		write(*, outputformat) "Triad", convertRate(bytes(4),time(4)), time(4)
+	else
+		if (header) &
+			write (*, "(A, A, A, A, A, A, A)") "Copy", ",", "Scale", ",", "Add", ",", "Triad"
+		write(*, "(F0.3, A, F0.3, A, F0.3, A, F0.3)") &
+			convertRate(bytes(1),time(1)), ",", &
+			convertRate(bytes(2),time(2)), ",", &
+			convertRate(bytes(3),time(3)), ",", &
+			convertRate(bytes(4),time(4))
+	end if
 
-	write(*, "(A, I0, A)") "Ran benchmarks ", ntimes, " times. Showing minimum results."
-	write(*,*) "-----------------------------------------------"
-	write(*, "(A10, 4x, A11, 4x, A9)") "Experiment", "Rate / GB/s", "Time / ms"
-	outputformat = "(A10, 4x, F11.3, 4x, F9.2)"
-	write(*, outputformat) "Copy", bytes(1)/(time(1)/1000.)/1024/1024/1024, time(1)
-	write(*, outputformat) "Scale", bytes(2)/(time(2)/1000.)/1024/1024/1024, time(2)
-	write(*, outputformat) "Add", bytes(3)/(time(3)/1000.)/1024/1024/1024, time(3)
-	write(*, outputformat) "Triad", bytes(4)/(time(4)/1000.)/1024/1024/1024, time(4)
+contains
+	subroutine printHelp()
+		write(*,"(A)") "Usage: stream.bin [OPTIONS]"
+		write(*,*) ""
+		write(*,"(A)") "Options:"
+		write(*,*) ""
+		write(*,"(A10, 4x, A)") "  --csv", "Print output in concise CSV format."
+		write(*,"(14x, A)")                "Format: Copy,Scale,Add,Triad. In GB/s."
+		write(*,"(A10, 4x, A)") "  --header", "Print header above CSV values."
+	end subroutine printHelp
 
+	real function convertRate(byte, time)
+		implicit none
+		integer(kind=8) :: byte
+		real :: time
+		convertRate = byte/(time/1000.)/1024/1024/1024
+	end function convertRate
 end program stream
