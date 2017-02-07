@@ -139,11 +139,11 @@ program stream
 	real :: tempTime  ! Helper value for timings
 	integer(kind=8), dimension(4) :: bytes
 	integer :: i  ! Loop run variables
-	character(len=30) :: outputformat  ! FORMAT string for Fortran output
+	character(len=40) :: outputformat  ! FORMAT string for Fortran output
 
 	character(len=32) :: arg
 	integer :: iArg
-	logical :: csv = .false., header = .false.
+	logical :: csv = .false., header = .false., fullout = .false.
 
 	do i = 1, command_argument_count()
 		call get_command_argument(i, arg)
@@ -156,6 +156,10 @@ program stream
 				csv = .true.
 			case ('--header')
 				header = .true.
+				csv = .true.
+			case ('--full')
+				fullout = .true.
+				csv = .true.
 			case default
 				write(*,'(A,A,/)') 'Unrecognized option: ', arg
 				call printHelp()
@@ -238,13 +242,28 @@ program stream
 		write(*, outputformat)   "Add", convertRate(bytes(3), minTime(3)), convertRate(bytes(3), maxTime(3)), convertRate(bytes(3), avgTime(3))
 		write(*, outputformat) "Triad", convertRate(bytes(4), minTime(4)), convertRate(bytes(4), maxTime(4)), convertRate(bytes(4), avgTime(4))
 	else
-		if (header) &
-			write (*, "(A, A, A, A, A, A, A)") "Copy", ",", "Scale", ",", "Add", ",", "Triad"
-		write(*, "(F0.3, A, F0.3, A, F0.3, A, F0.3)") &
-			convertRate(bytes(1),time(1)), ",", &
-			convertRate(bytes(2),time(2)), ",", &
-			convertRate(bytes(3),time(3)), ",", &
-			convertRate(bytes(4),time(4))
+		if (fullout) then
+			if (header) &
+				write (*, "(A, A, A, A, A, A, A, A, A, A, A, A, A, A, A, A, A, A, A)") "Copy (Max)", ",", "Copy (Min)", ",", "Copy (Avg)", ",", "Scale (Max)", ",", "Scale (Min)", ",", "Scale (Avg)", ",", "Add", ",", "Triad (Min)", ",", "Triad (Max)", ",", "Triad (Avg)"
+			write (*, "(F0.3, A, F0.3, A, F0.3, A, F0.3, A, F0.3, A, F0.3, A, F0.3, A, F0.3, A, F0.3, A, F0.3)") &
+				convertRate(bytes(1), minTime(1)), ",", &
+				convertRate(bytes(1), maxTime(1)), ",", &
+				convertRate(bytes(1), avgTime(1)), ",", &
+				convertRate(bytes(2), minTime(2)), ",", &
+				convertRate(bytes(2), maxTime(2)), ",", &
+				convertRate(bytes(2), avgTime(2)), ",", &
+				convertRate(bytes(3), minTime(3)), ",", &
+				convertRate(bytes(3), maxTime(3)), ",", &
+				convertRate(bytes(3), avgTime(3))
+		else
+			if (header) &
+				write (*, "(A, A, A, A, A, A, A)") "Copy", ",", "Scale", ",", "Add", ",", "Triad"
+			write(*, "(F0.3, A, F0.3, A, F0.3, A, F0.3)") &
+				convertRate(bytes(1), minTime(1)), ",", &
+				convertRate(bytes(2), minTime(2)), ",", &
+				convertRate(bytes(3), minTime(3)), ",", &
+				convertRate(bytes(4), minTime(4))
+		end if
 	end if
 
 contains
@@ -253,9 +272,11 @@ contains
 		write(*,*) ""
 		write(*,"(A)") "Options:"
 		write(*,*) ""
-		write(*,"(A10, 4x, A)") "  --csv", "Print output in concise CSV format."
-		write(*,"(14x, A)")                "Format: Copy,Scale,Add,Triad. In GB/s."
-		write(*,"(A10, 4x, A)") "  --header", "Print header above CSV values."
+		write(*,"(A10, 4x, A)")    "  --csv", "Print output in concise CSV format. Max. rates given."
+		write(*,"(14x, A)")                   "Format: Copy,Scale,Add,Triad. In GB/s. (See --header)"
+		write(*,"(A10, 4x, A)")   "  --full", "Print min, max, avg rate in CSV format."
+		write(*,"(14x, A)")                   "In GB/s. Implies --csv, currently."
+		write(*,"(A10, 4x, A)") "  --header", "Print header above CSV values. Implies --csv."
 	end subroutine printHelp
 
 	real function convertRate(byte, time)
