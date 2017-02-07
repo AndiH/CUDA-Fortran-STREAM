@@ -133,10 +133,11 @@ program stream
 	attributes(device) :: d_a, d_b, d_c  ! Prefixed with d_ for device
 	type(dim3) :: nBlocks, nThreads  ! Launch this many blocks and threads
 	type(cudaEvent) :: startEvent, stopEvent  ! Using CUDA events for timing
-	real, dimension(4) :: time  ! Array of minimal times for each experiment
+	integer, parameter :: ntimes = 10  ! Repeat measurements this often
+	real, dimension(4, ntimes) :: time  ! Array of minimal times for each experiment
+	real, dimension(4) :: minTime, maxTime, avgTime
 	real :: tempTime  ! Helper value for timings
 	integer(kind=8), dimension(4) :: bytes
-	integer, parameter :: ntimes = 10  ! Repeat measurements this often
 	integer :: i  ! Loop run variables
 	character(len=30) :: outputformat  ! FORMAT string for Fortran output
 
@@ -195,9 +196,7 @@ program stream
 		CUDACALL( cudaEventRecord(stopEvent, 0) )
 		CUDACALL( cudaEventSynchronize(stopEvent) )
 		CUDACALL( cudaEventElapsedTime(tempTime, startEvent, stopEvent) ) ! in ms
-		if ((i == 1) .OR. (tempTime < time(1))) then
-			time(1) = tempTime
-		end if
+		time(1, i) = tempTime
 
 		CUDACALL( cudaEventRecord(startEvent, 0) )
 		call scale<<<nBlocks, nThreads>>>(d_a, d_b, scalar, N)
@@ -205,9 +204,7 @@ program stream
 		CUDACALL( cudaEventRecord(stopEvent, 0) )
 		CUDACALL( cudaEventSynchronize(stopEvent) )
 		CUDACALL( cudaEventElapsedTime(tempTime, startEvent, stopEvent) ) ! in ms
-		if ((i == 1) .OR. (tempTime < time(2))) then
-			time(2) = tempTime
-		end if
+		time(2, i) = tempTime
 
 		CUDACALL( cudaEventRecord(startEvent, 0) )
 		call add<<<nBlocks, nThreads>>>(d_a, d_b, d_c, N)
@@ -215,9 +212,7 @@ program stream
 		CUDACALL( cudaEventRecord(stopEvent, 0) )
 		CUDACALL( cudaEventSynchronize(stopEvent) )
 		CUDACALL( cudaEventElapsedTime(tempTime, startEvent, stopEvent) ) ! in ms
-		if ((i == 1) .OR. (tempTime < time(3))) then
-			time(3) = tempTime
-		end if
+		time(3, i) = tempTime
 
 		CUDACALL( cudaEventRecord(startEvent, 0) )
 		call triad<<<nBlocks, nThreads>>>(d_a, d_b, d_c, scalar, N)
@@ -225,20 +220,23 @@ program stream
 		CUDACALL( cudaEventRecord(stopEvent, 0) )
 		CUDACALL( cudaEventSynchronize(stopEvent) )
 		CUDACALL( cudaEventElapsedTime(tempTime, startEvent, stopEvent) )! in ms
-		if ((i == 1) .OR. (tempTime < time(4))) then
-			time(4) = tempTime
-		end if
+		time(4, i) = tempTime
 	end do
 
+	call populateMinMaxAvg(time(1,:), minTime(1), maxTime(1), avgTime(1))
+	call populateMinMaxAvg(time(2,:), minTime(2), maxTime(2), avgTime(2))
+	call populateMinMaxAvg(time(3,:), minTime(3), maxTime(3), avgTime(3))
+	call populateMinMaxAvg(time(4,:), minTime(4), maxTime(4), avgTime(4))
+
 	if (.NOT. csv) then
-		write(*, "(A, I0, A)") "Ran benchmarks ", ntimes, " times. Showing minimum results."
+		write(*, "(A, I0, A, I0, A, F0.2, A)") "Ran benchmarks ", ntimes, " times. Data array length: ", N, " => ", sizeof(value) * real(N)/1024/1024/1024, " GB"
 		write(*,*) "-----------------------------------------------"
-		write(*, "(A10, 4x, A11, 4x, A9)") "Experiment", "Rate / GB/s", "Time / ms"
-		outputformat = "(A10, 4x, F11.3, 4x, F9.2)"
-		write(*, outputformat)  "Copy", convertRate(bytes(1),time(1)), time(1)
-		write(*, outputformat) "Scale", convertRate(bytes(2),time(2)), time(2)
-		write(*, outputformat)   "Add", convertRate(bytes(3),time(3)), time(3)
-		write(*, outputformat) "Triad", convertRate(bytes(4),time(4)), time(4)
+		write(*, "(A10, 4x, A16, 4x, A16, 4x, A16)") "Experiment", "Max. Rate / GB/s",  "Min. Rate / GB/s", "Avg. Rate / GB/s"
+		outputformat = "(A10, 4x, F16.3, 4x, F16.3, 4x, F16.3)"
+		write(*, outputformat)  "Copy", convertRate(bytes(1), minTime(1)), convertRate(bytes(1), maxTime(1)), convertRate(bytes(1), avgTime(1))
+		write(*, outputformat) "Scale", convertRate(bytes(2), minTime(2)), convertRate(bytes(2), maxTime(2)), convertRate(bytes(2), avgTime(2))
+		write(*, outputformat)   "Add", convertRate(bytes(3), minTime(3)), convertRate(bytes(3), maxTime(3)), convertRate(bytes(3), avgTime(3))
+		write(*, outputformat) "Triad", convertRate(bytes(4), minTime(4)), convertRate(bytes(4), maxTime(4)), convertRate(bytes(4), avgTime(4))
 	else
 		if (header) &
 			write (*, "(A, A, A, A, A, A, A)") "Copy", ",", "Scale", ",", "Add", ",", "Triad"
@@ -264,6 +262,24 @@ contains
 		implicit none
 		integer(kind=8) :: byte
 		real :: time
-		convertRate = byte/(time/1000.)/1024/1024/1024
+		convertRate = real(byte)/(time/1000.)/1024/1024/1024
 	end function convertRate
+
+	subroutine populateMinMaxAvg(times, min_, max_, avg_)
+		implicit none
+		real, dimension(:), intent(in) :: times
+		real, intent(out) :: min_, max_, avg_
+		real :: sum_
+		integer :: i
+
+		avg_ = sum(times)/size(times,1)
+		min_ = times(1)
+		max_ = times(1)
+		do i = 2, size(times,1)
+			if (times(i) < min_) &
+				min_ = times(i)
+			if (times(i) > max_) &
+				max_ = times(i)
+		end do
+	end subroutine populateMinMaxAvg
 end program stream
