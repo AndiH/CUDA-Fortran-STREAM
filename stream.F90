@@ -244,7 +244,7 @@ program stream
 	else
 		if (fullout) then
 			if (header) &
-				write (*, "(A, A, A, A, A, A, A, A, A, A, A, A, A, A, A, A, A, A, A)") "Copy (Max)", ",", "Copy (Min)", ",", "Copy (Avg)", ",", "Scale (Max)", ",", "Scale (Min)", ",", "Scale (Avg)", ",", "Add", ",", "Triad (Min)", ",", "Triad (Max)", ",", "Triad (Avg)"
+				write (*, "(A, A, A, A, A, A, A, A, A, A, A, A, A, A, A, A, A, A, A)") "Copy (Max)", ",", "Copy (Min)", ",", "Copy (Avg)", ",", "Scale (Max)", ",", "Scale (Min)", ",", "Scale (Avg)", ",", "Triad (Min)", ",", "Triad (Max)", ",", "Triad (Avg)"
 			write (*, "(F0.3, A, F0.3, A, F0.3, A, F0.3, A, F0.3, A, F0.3, A, F0.3, A, F0.3, A, F0.3, A, F0.3)") &
 				convertRate(bytes(1), minTime(1)), ",", &
 				convertRate(bytes(1), maxTime(1)), ",", &
