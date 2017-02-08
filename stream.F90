@@ -127,7 +127,7 @@ program stream
 	use debug
 	implicit none
 
-	integer(kind=8), parameter :: N = 250000000  ! Lengths of data arrays
+	integer(kind=8), parameter :: N = 300000000  ! Lengths of data arrays
 	real(kind=dp_kind) :: value, scalar  ! Helper variables
 	real(kind=dp_kind), dimension(:), allocatable :: a, d_a, b, d_b, c, d_c  ! Data arrays
 	attributes(device) :: d_a, d_b, d_c  ! Prefixed with d_ for device
@@ -243,9 +243,14 @@ program stream
 		write(*, outputformat) "Triad", convertRate(bytes(4), minTime(4)), convertRate(bytes(4), maxTime(4)), convertRate(bytes(4), avgTime(4))
 	else
 		if (fullout) then
-			if (header) &
-				write (*, "(A, A, A, A, A, A, A, A, A, A, A, A, A, A, A, A, A, A, A)") "Copy (Max)", ",", "Copy (Min)", ",", "Copy (Avg)", ",", "Scale (Max)", ",", "Scale (Min)", ",", "Scale (Avg)", ",", "Triad (Min)", ",", "Triad (Max)", ",", "Triad (Avg)"
-			write (*, "(F0.3, A, F0.3, A, F0.3, A, F0.3, A, F0.3, A, F0.3, A, F0.3, A, F0.3, A, F0.3, A, F0.3)") &
+			if (header) then
+				write (*, "(A, A, A, A, A, A, A, A, A, A, A, A, A, A, A, A, A, A, A, A, A, A)") &
+					"Copy (Max)",  ",", "Copy (Min)",  ",", "Copy (Avg)",  ",", &
+					"Scale (Max)", ",", "Scale (Min)", ",", "Scale (Avg)", ",", &
+					"Add (Min)",   ",", "Add (Max)",   ",", "Add (Avg)",   ",", &
+					"Triad (Min)", ",", "Triad (Max)", ",", "Triad (Avg)"
+			end if
+			write (*, "(F0.3, A, F0.3, A, F0.3, A, F0.3, A, F0.3, A, F0.3, A, F0.3, A, F0.3, A, F0.3, A, F0.3, A, F0.3, A, F0.3, A, F0.3)") &
 				convertRate(bytes(1), minTime(1)), ",", &
 				convertRate(bytes(1), maxTime(1)), ",", &
 				convertRate(bytes(1), avgTime(1)), ",", &
@@ -254,7 +259,10 @@ program stream
 				convertRate(bytes(2), avgTime(2)), ",", &
 				convertRate(bytes(3), minTime(3)), ",", &
 				convertRate(bytes(3), maxTime(3)), ",", &
-				convertRate(bytes(3), avgTime(3))
+				convertRate(bytes(3), maxTime(3)), ",", &
+				convertRate(bytes(4), maxTime(4)), ",", &
+				convertRate(bytes(4), maxTime(4)), ",", &
+				convertRate(bytes(4), avgTime(4))
 		else
 			if (header) &
 				write (*, "(A, A, A, A, A, A, A)") "Copy", ",", "Scale", ",", "Add", ",", "Triad"
