@@ -233,9 +233,9 @@ program stream
 	call populateMinMaxAvg(time(4,:), minTime(4), maxTime(4), avgTime(4))
 
 	if (.NOT. csv) then
-		write(*, "(A, I0, A, I0, A, F0.2, A)") "Ran benchmarks ", ntimes, " times. Data array length: ", N, " => ", sizeof(value) * real(N)/1024/1024/1024, " GB"
+		write(*, "(A, I0, A, I0, A, F0.2, A)") "Ran benchmarks ", ntimes, " times. Data array length: ", N, " => ", sizeof(value) * real(N)/1024/1024/1024, " GiB"
 		write(*,*) "-----------------------------------------------"
-		write(*, "(A10, 4x, A16, 4x, A16, 4x, A16)") "Experiment", "Max. Rate / GB/s",  "Min. Rate / GB/s", "Avg. Rate / GB/s"
+		write(*, "(A10, 4x, A16, 4x, A16, 4x, A16)") "Experiment", "Max. Rate / GiB/s",  "Min. Rate / GiB/s", "Avg. Rate / GiB/s"
 		outputformat = "(A10, 4x, F16.3, 4x, F16.3, 4x, F16.3)"
 		write(*, outputformat)  "Copy", convertRate(bytes(1), minTime(1)), convertRate(bytes(1), maxTime(1)), convertRate(bytes(1), avgTime(1))
 		write(*, outputformat) "Scale", convertRate(bytes(2), minTime(2)), convertRate(bytes(2), maxTime(2)), convertRate(bytes(2), avgTime(2))
@@ -281,9 +281,9 @@ contains
 		write(*,"(A)") "Options:"
 		write(*,*) ""
 		write(*,"(A10, 4x, A)")    "  --csv", "Print output in concise CSV format. Max. rates given."
-		write(*,"(14x, A)")                   "Format: Copy,Scale,Add,Triad. In GB/s. (See --header)"
+		write(*,"(14x, A)")                   "Format: Copy,Scale,Add,Triad. In GiB/s. (See --header)"
 		write(*,"(A10, 4x, A)")   "  --full", "Print min, max, avg rate in CSV format."
-		write(*,"(14x, A)")                   "In GB/s. Implies --csv, currently."
+		write(*,"(14x, A)")                   "In GiB/s. Implies --csv, currently."
 		write(*,"(A10, 4x, A)") "  --header", "Print header above CSV values. Implies --csv."
 	end subroutine printHelp
 
